@@ -295,7 +295,13 @@ let fixtureDatabase = [
 function getDBConverterPrice(watt) {
   const w = parseInt(watt, 10);
   const match = fixtureDatabase.find(f => f.category === 'converter' && f.name.includes(`${w}W`));
-  return match ? match.price : (w === 36 ? 24500 : (w === 60 ? 30100 : 44100)); // fallback
+  return match ? match.price : (w === 36 ? 24500 : (w === 60 ? 30100 : 43700)); // fallback
+}
+
+function getDBConverterName(watt) {
+  const w = parseInt(watt, 10);
+  const match = fixtureDatabase.find(f => f.category === 'converter' && f.name.includes(`${w}W`));
+  return match ? match.name : `${w}W 안정기`;
 }
 
 function getDBControllerPrice() {
@@ -311,7 +317,7 @@ function getDBProductPrice(namePattern, defaultPrice) {
 function getDBConverterProdCd(watt) {
   const w = parseInt(watt, 10);
   const match = fixtureDatabase.find(f => f.category === 'converter' && f.name.includes(`${w}W`));
-  return match ? (match.ecountProdCd || null) : null;
+  return match ? (match.ecountProdCd || null) : 'ZBR_PART5_0057';
 }
 
 function getDBControllerProdCd() {
@@ -4086,24 +4092,10 @@ function calculateRequiredSMPS(watt) {
   if (watt <= 0) return [];
   let smps = [];
   let w = watt;
-  // 150W SMPS has 80% safe load limit of 120W
-  while (w > 120) {
+  // 150W 단일 규격 사용 (안전부하 80% 기준: 대당 최대 120W)
+  while (w > 0) {
     smps.push(150);
     w -= 120;
-  }
-  if (w > 0) {
-    // 36W (80% safe limit = 28.8W)
-    if (w <= 28.8) {
-      smps.push(36);
-    }
-    // 60W (80% safe limit = 48.0W)
-    else if (w <= 48.0) {
-      smps.push(60);
-    }
-    // 150W (80% safe limit = 120.0W)
-    else {
-      smps.push(150);
-    }
   }
   return smps;
 }
@@ -6594,7 +6586,7 @@ async function exportToExcel() {
         const smpsPrice = getDBConverterPrice(capNum);
         if (!allProducts[smpsId]) {
           allProducts[smpsId] = {
-            name: `컨버터 ${capNum}W IoT`,
+            name: getDBConverterName(capNum) || `컨버터 ${capNum}W IoT`,
             type: '안정기 (SMPS)',
             color: null,
             price: smpsPrice,
